@@ -3,25 +3,32 @@
 #include <stdio.h>
 #include <queue>
 #include <sstream>
+#include <list>
 
 using std::cin;
 using std::cout;
 using std::endl;
+using std::for_each;
+using std::list;
 using std::queue;
 using std::string;
 using std::stringstream;
+using std::to_string;
 
 struct order
 {
-    string number;
-    bool buyOrder; // true if buy, false if sell
-    string instrument;
-    int quantity;
-    int price;
+    string number;     // order number
+    bool buyOrder;     // true if buy, false if sell
+    string instrument; // instrument in question
+    int quantity;      // quantity of order
+    int price;         // price preference
 };
 
 queue<order> buyOrders;
-queue<order> sellOrders;
+list<order> sellOrders = list<order>();
+list<order>::iterator it;
+list<string> completedOrders;
+list<string>::iterator it2;
 
 std::string fetchOrder()
 {
@@ -63,6 +70,11 @@ order parseOrder(string unparsedOrder)
     return parsedOrder;
 }
 
+void print(string str)
+{
+    std::cout << str << endl;
+}
+
 int main()
 {
     order currParsedOrder;
@@ -75,8 +87,38 @@ int main()
         if (currParsedOrder.buyOrder)
             buyOrders.push(currParsedOrder);
         else if (!currParsedOrder.buyOrder)
-            sellOrders.push(currParsedOrder);
+            sellOrders.push_back(currParsedOrder);
+
+        order currentBuyOrderToFill = buyOrders.front();
+
+        for (it = sellOrders.begin(); it != sellOrders.end(); it++)
+        {
+            if (it->instrument == currentBuyOrderToFill.instrument)
+            {
+                if (it->price == currentBuyOrderToFill.price)
+                { // only match same price orders
+                    if (it->quantity > currentBuyOrderToFill.quantity)
+                    {
+                        it->quantity -= currentBuyOrderToFill.quantity;
+                        buyOrders.pop();
+                        completedOrders.push_back("TRADE " + it->instrument + " " + it->number + " " + currentBuyOrderToFill.number + " " + to_string(it->price) + " " + to_string(currentBuyOrderToFill.quantity));
+                        // TRADE BTCUSD abe14 12345 5 10000
+                        break;
+                    }
+                    else if (it->quantity < currentBuyOrderToFill.quantity)
+                    {
+                        currentBuyOrderToFill.quantity -= it->quantity;
+                        completedOrders.push_back("TRADE" + it->instrument + it->number + currentBuyOrderToFill.number + to_string(it->price) + to_string(it->price));
+                        sellOrders.erase(it);
+                    }
+                }
+            }
+        }
     }
+
+    for_each(completedOrders.begin(),
+             completedOrders.end(),
+             print);
 
     return 1;
 }
