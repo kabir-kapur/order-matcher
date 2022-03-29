@@ -26,7 +26,7 @@ struct order
 
 queue<order> buyOrders;
 list<order> sellOrders = list<order>();
-list<order>::iterator it;
+list<order>::iterator currentSellOrderToFill;
 list<string> completedOrders;
 list<string>::iterator it2;
 
@@ -62,7 +62,10 @@ order parseOrder(string unparsedOrder)
         else if (tokenCount == 3)
             parsedOrder.quantity = stoi(token);
         else if (tokenCount == 3)
+        {
+            cout << stoi(token);
             parsedOrder.price = stoi(token);
+        }
 
         tokenCount++;
     }
@@ -91,25 +94,29 @@ int main()
 
         order currentBuyOrderToFill = buyOrders.front();
 
-        for (it = sellOrders.begin(); it != sellOrders.end(); it++)
+        for (currentSellOrderToFill = sellOrders.begin(); currentSellOrderToFill != sellOrders.end(); currentSellOrderToFill++)
         {
-            if (it->instrument == currentBuyOrderToFill.instrument)
+            if (currentSellOrderToFill->instrument == currentBuyOrderToFill.instrument)
             {
-                if (it->price == currentBuyOrderToFill.price)
+                if (currentSellOrderToFill->price == currentBuyOrderToFill.price)
                 { // only match same price orders
-                    if (it->quantity > currentBuyOrderToFill.quantity)
+                    if (currentSellOrderToFill->quantity > currentBuyOrderToFill.quantity)
                     {
-                        it->quantity -= currentBuyOrderToFill.quantity;
+                        cout << currentSellOrderToFill->price;
+                        int sold = currentBuyOrderToFill.quantity;
+                        currentSellOrderToFill->quantity -= currentBuyOrderToFill.quantity;
                         buyOrders.pop();
-                        completedOrders.push_back("TRADE " + it->instrument + " " + it->number + " " + currentBuyOrderToFill.number + " " + to_string(it->price) + " " + to_string(currentBuyOrderToFill.quantity));
+                        completedOrders.push_back("TRADE " + currentSellOrderToFill->instrument + " " + currentSellOrderToFill->number + " " + currentBuyOrderToFill.number + " " + to_string(sold) + " " + to_string(currentBuyOrderToFill.price));
                         // TRADE BTCUSD abe14 12345 5 10000
                         break;
                     }
-                    else if (it->quantity < currentBuyOrderToFill.quantity)
+                    else if (currentSellOrderToFill->quantity < currentBuyOrderToFill.quantity)
                     {
-                        currentBuyOrderToFill.quantity -= it->quantity;
-                        completedOrders.push_back("TRADE" + it->instrument + it->number + currentBuyOrderToFill.number + to_string(it->price) + to_string(it->price));
-                        sellOrders.erase(it);
+                        cout << currentSellOrderToFill->quantity << endl;
+                        cout << currentBuyOrderToFill.quantity << endl;
+                        currentBuyOrderToFill.quantity -= currentSellOrderToFill->quantity;
+                        completedOrders.push_back("TRADE" + currentSellOrderToFill->instrument + currentSellOrderToFill->number + currentBuyOrderToFill.number + to_string(currentSellOrderToFill->price) + to_string(currentSellOrderToFill->price));
+                        sellOrders.erase(currentSellOrderToFill);
                     }
                 }
             }
